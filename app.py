@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Configure local SQLite database
-db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'loanshield.db')
+if os.environ.get('VERCEL_ENV') or os.environ.get('VERCEL'):
+    db_path = '/tmp/loanshield.db'
+else:
+    db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'loanshield.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
