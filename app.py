@@ -24,18 +24,26 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 # Initialize Analyzer coordinator
-# Load VirusTotal API Key from environment if available
 vt_key = os.environ.get("VT_API_KEY", "")
 analyzer = AppAnalyzer(vt_api_key=vt_key)
 
+init_error = None
 # Ensure tables are created and NBFC lists are seeded
-with app.app_context():
-    try:
+try:
+    with app.app_context():
         db.create_all()
         seed_nbfc_database()
         logger.info("Database initialized and seeded successfully.")
-    except Exception as e:
-        logger.error(f"Error initializing database: {e}")
+except Exception as e:
+    logger.error(f"Error initializing database: {e}")
+    import traceback
+    init_error = traceback.format_exc()
+
+@app.route('/ping')
+def ping():
+    if init_error:
+        return f"<pre>Initialization failed:\n{init_error}</pre>", 500
+    return "pong", 200
 
 @app.route('/')
 def index():
