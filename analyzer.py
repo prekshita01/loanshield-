@@ -1,7 +1,14 @@
 import re
 import logging
 from urllib.parse import urlparse, parse_qs
-from google_play_scraper import app as play_scraper_app, search as play_scraper_search, reviews as play_scraper_reviews
+# pyrefly: ignore [missing-import]
+try:
+    from google_play_scraper import app as play_scraper_app, search as play_scraper_search, reviews as play_scraper_reviews
+    SCRAPER_AVAILABLE = True
+except ImportError as e:
+    logging.error(f"google_play_scraper import failed: {e}")
+    SCRAPER_AVAILABLE = False
+
 
 from vt_checker import VTChecker
 from osint import OSINTAnalyzer
@@ -52,10 +59,10 @@ class AppAnalyzer:
         package_name = self.extract_package_name(input_query)
         search_used = False
 
-        if not package_name:
+        if not package_name and SCRAPER_AVAILABLE:
             # Assume it is an App Name, perform search
             try:
-                search_results = play_scraper_search(input_query, lang="en", country="in", n_hits=1)
+                search_results = play_scraper_search(input_query, lang="en", country="in")
                 if search_results:
                     package_name = search_results[0].get("appId")
                     search_used = True
@@ -69,7 +76,7 @@ class AppAnalyzer:
         app_details = None
         reviews_list = []
         
-        if package_name:
+        if package_name and SCRAPER_AVAILABLE:
             try:
                 app_details = play_scraper_app(package_name, lang="en", country="in")
                 
@@ -78,10 +85,10 @@ class AppAnalyzer:
                     rv_results, _ = play_scraper_reviews(
                         package_name,
                         lang='en',
-                        country='in',
-                        count=5
+                        country='in'
                     )
-                    reviews_list = [{"text": r.get("content", ""), "rating": r.get("score", 0)} for r in rv_results]
+                    # Limit to top 5 reviews manually to avoid kwarg issues
+                    reviews_list = [{"text": r.get("content", ""), "rating": r.get("score", 0)} for r in rv_results[:5]]
                 except Exception as rev_err:
                     logger.warning(f"Failed to fetch reviews: {rev_err}")
                     
