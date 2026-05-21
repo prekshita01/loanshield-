@@ -7,6 +7,9 @@ try:
     SCRAPER_AVAILABLE = True
 except ImportError as e:
     logging.error(f"google_play_scraper import failed: {e}")
+    play_scraper_app = None
+    play_scraper_search = None
+    play_scraper_reviews = None
     SCRAPER_AVAILABLE = False
 
 
